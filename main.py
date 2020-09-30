@@ -11,6 +11,7 @@ from flask import redirect
 from flask import url_for
 # from flask import session
 from flask.json import jsonify
+# import json
 from flask.helpers import make_response
 
 from notion.client import NotionClient
@@ -35,44 +36,40 @@ def api_get():
 @app.route("/api", methods=["post"])
 def api_post():
 
-    if request.data != None:
-        json = jsonify(request.data)
+    if request.data == None or request.data == "":
+        return redirect(url_for("home"))
+    
+    data = managerlogica.convertirJsonObjecto(request.data)
+    if data == None:
+        return redirect(url_for("home"))
+    
+    uuid = managerlogica.getUUIdPage(data["idPage"])
+    if uuid == None:
+        return jsonify({"resultado": "error"})
 
+    client = NotionClient(data["apiToken"])
 
+    # uuid
+    # token = "e90da1e31347b2b61836546b0af4378b6076d67a72a82804996450eb3ece399a12bc39fd89a81dd0592593ed556043b0cbf6dcea765da4416ebeaec81e43141f7aa6d25d2423cb7f163e109da8f2"
+    # url = "https://www.notion.so/cecf1c9de960437c80f4f3b9940a5a6c"
 
-    if ("apiToken" in request.form and "idPage" in request.form):
-        if request.form["apiToken"] == "" or request.form["apiToken"] == "":
-            return jsonify({"resultado": "error"})
+    page = client.get_block(uuid)  # url
 
-        uuid = managerlogica.getUUIdPage(request.form["idPage"])
-        if uuid == None:
-            return jsonify({"resultado": "error"})
+    print("titulo antiguo" + page.title)
 
-        client = NotionClient(request.form["apiToken"])
+    page.title += " (Cambiado)"
+    bloquecodigo = page.children.add_new(CodeBlock, title=data["codigo"])
+    response = make_response()
+    print(bloquecodigo)
 
-        # uuid
-        # page = client.get_block(uuid)
-        # token = "e90da1e31347b2b61836546b0af4378b6076d67a72a82804996450eb3ece399a12bc39fd89a81dd0592593ed556043b0cbf6dcea765da4416ebeaec81e43141f7aa6d25d2423cb7f163e109da8f2"
-        # url
+    if bloquecodigo.id != None:
+        response = jsonify({"resultado": "ok"})
+    else:
+        response = jsonify({"resultado": "error"})
 
-        url = "https://www.notion.so/cecf1c9de960437c80f4f3b9940a5a6c"
-        page = client.get_block(url)
-
-        print("titulo antiguo" + page.title)
-
-        page.title += " (Cambiado)"
-        bloquecodigo = page.children.add_new(CodeBlock, title="hooollaaa")
-        response = make_response()
-        print(bloquecodigo)
-
-        if bloquecodigo.id != None:
-            response = jsonify({"resultado": bloquecodigo})
-        else:
-            response = jsonify({"resultado": "error"})
-
-        response.headers.add("Access-Control-Allow-Origin", "*")
-        return response
-    return redirect(url_for("home"))
+    response.headers.add("Access-Control-Allow-Origin", "*")
+    return response
+    # return redirect(url_for("home"))
 
 if __name__ == "__main__":
     settings.readconfig()
