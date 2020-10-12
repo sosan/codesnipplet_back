@@ -23,6 +23,10 @@ managerlogica = ManagerLogica()
 
 app = Flask(__name__)
 
+# env_produccion = os.getenv("FLASK_ENV", "production")
+# app.config("ENV", env_produccion)
+# app.config("FLASK_APP", "main.py")
+
 @app.route("/", methods=["get"])
 def home():
     return jsonify({"resultado": "ok"})
@@ -35,49 +39,58 @@ def api_get():
 
 @app.route("/api", methods=["post"])
 def api_post():
+    try:
+        if request.data == None or request.data == "":
+            return redirect(url_for("home"))
 
-    if request.data == None or request.data == "":
-        return redirect(url_for("home"))
+        data = managerlogica.convertirJsonObjecto(request.data)
+
+        if data == None:
+            return redirect(url_for("home"))
+
+        uuid = managerlogica.getUUIdPage(data["idPage"])
+        if uuid == None:
+            return jsonify({"resultado": "error"})
+
+        client = NotionClient(data["apiToken"])
+
+        # uuid
+        # token = "e90da1e31347b2b61836546b0af4378b6076d67a72a82804996450eb3ece399a12bc39fd89a81dd0592593ed556043b0cbf6dcea765da4416ebeaec81e43141f7aa6d25d2423cb7f163e109da8f2"
+        # url = "https://www.notion.so/cecf1c9de960437c80f4f3b9940a5a6c"
+
+        page = client.get_block(data["idPage"])  # url
+
+        print("titulo antiguo" + page.title)
+
+        # page.title += " (Cambiado)"
+        bloquecodigo = page.children.add_new(CodeBlock, title=data["codigo"])
+        response = None
+        print(bloquecodigo)
+
+        
+
+        if bloquecodigo.id != None:
+            response = make_response( jsonify({"resultado": "ok"}))
+        else:
+            response = make_response( jsonify({"resultado": "error"}))
+            # response = jsonify({"resultado": "error"})
+
+        response.headers["content-type"] = "application/json"
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+
+        # return jsonify({"resultado": "ok"})
+        # return redirect(url_for("home"))
+
+    except IndexError as error:
+        return jsonify({"resultado": error.message })
     
-    data = managerlogica.convertirJsonObjecto(request.data)
-    if data == None:
-        return redirect(url_for("home"))
-    
-    uuid = managerlogica.getUUIdPage(data["idPage"])
-    if uuid == None:
-        return jsonify({"resultado": "error"})
-
-    client = NotionClient(data["apiToken"])
-
-    # uuid
-    # token = "e90da1e31347b2b61836546b0af4378b6076d67a72a82804996450eb3ece399a12bc39fd89a81dd0592593ed556043b0cbf6dcea765da4416ebeaec81e43141f7aa6d25d2423cb7f163e109da8f2"
-    # url = "https://www.notion.so/cecf1c9de960437c80f4f3b9940a5a6c"
-
-    page = client.get_block(uuid)  # url
-
-    print("titulo antiguo" + page.title)
-
-    page.title += " (Cambiado)"
-    bloquecodigo = page.children.add_new(CodeBlock, title=data["codigo"])
-    response = make_response()
-    print(bloquecodigo)
-
-    if bloquecodigo.id != None:
-        response = jsonify({"resultado": "ok"})
-    else:
-        response = jsonify({"resultado": "error"})
-
-    response.headers.add("Access-Control-Allow-Origin", "*")
-    return response
-    # return redirect(url_for("home"))
 
 if __name__ == "__main__":
-    settings.readconfig()
+    
     env_host = os.environ.get("HOST", "0.0.0.0")
     env_port = int(os.environ.get("PORT", 5000))
     env_debug = os.environ.get("FLASK_DEBUG", False)
-    env_produccion = os.getenv("FLASK_ENV", "production")
-    app.config("ENV", env_produccion)
-    app.config("FLASK_APP", "main.py")
+    
 
-    app.run(host=env_host, port=env_port, debug=env_debug)
+    app.run(host=env_host, port=env_port, debug=env_debug, load_dotenv=True)
