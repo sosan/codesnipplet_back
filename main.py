@@ -57,9 +57,9 @@ def api_post():
 
         print("titulo antiguo" + page.title)
 
-        # page.title += " (Cambiado)"
+        lenguaje = data["lenguaje"] or "Javascript"
         bloquecodigo = page.children.add_new(
-            block_type="code", title=data["codigo"], language=data["lenguaje"])
+            block_type="code", title=data["codigo"], language=lenguaje )
         response = None
         print(bloquecodigo)
 
