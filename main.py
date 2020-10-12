@@ -53,12 +53,7 @@ def api_post():
             return jsonify({"resultado": "error"})
 
         client = NotionClient(data["apiToken"])
-
-        # uuid
-        # token = "e90da1e31347b2b61836546b0af4378b6076d67a72a82804996450eb3ece399a12bc39fd89a81dd0592593ed556043b0cbf6dcea765da4416ebeaec81e43141f7aa6d25d2423cb7f163e109da8f2"
-        # url = "https://www.notion.so/cecf1c9de960437c80f4f3b9940a5a6c"
-
-        page = client.get_block(data["idPage"])  # url
+        page = client.get_block(uuid)
 
         print("titulo antiguo" + page.title)
 
