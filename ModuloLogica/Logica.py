@@ -35,7 +35,7 @@ class ManagerLogica():
             return None
 
         if "apiToken" in data or "idPage" in data or "codigo" in data:
-            if data["apiToken"] == "" or data["apiToken"] == "":
+            if data["apiToken"] == "" or data["apiToken"] == None:
                 return None
 
         return data
